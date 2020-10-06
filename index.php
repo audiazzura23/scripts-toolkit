@@ -8,6 +8,9 @@
 </head>
 <body>
     <h1>Hello World</h1>
+    <h7>HTML is .....working</h7>
+    <br>
+    <?php echo "PHP is .....working"; ?>
     <?php phpinfo(); ?>
 </body>
 </html>>
