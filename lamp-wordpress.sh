@@ -4,24 +4,29 @@
 pwd=$(pwd)
 
 #variables to be used for db
-read -p 'wordpress_db_name [wp_db]: ' wordpress_db_name
-read -p 'db_root_username [only-alphanumeric]: ' db_root_username
-read -p 'db_root_password [only-alphanumeric]: ' db_root_password
-read -p 'db_host [for default, type:localhost]: ' db_host
-echo
+echo ""
+echo ">>>>>>>>>>>>>>>>> Remember these settings <<<<<<<<<<<<<<<<<"
+echo ">>>>> it will be needed to complete the installations <<<<<"
+echo ""
+read -p 'Database Name for Wordpress (alphaumeric only): ' wordpress_db_name
+read -p 'Database Root Username (alphanumeric only): ' db_root_username
+read -p 'New Database Root Password (alphanumeric and symbols): ' db_root_password
+read -p 'Database Host (for default, type:localhost): ' db_host
+echo ""
 
 #lamp stack installation
 apt -y update
 apt -y install apache2
 apt -y install mysql-server
-apt-get -y install php php-mysql libapache2-mod-php php-cli php-cgi php-gd
+apt -y install php php-mysql libapache2-mod-php php-cli php-cgi php-gd
 
-#makes sure lamp stack running
+#making sure lamp stack is running
 systemctl start apache2
 systemctl start mysql
 
-#mysql secure install 
-mysql --user=root <<_EOF_
+#mysql secure install
+mysql -e "SET PASSWORD FOR root@localhost = PASSWORD('temp');FLUSH PRIVILEGES;" 
+mysql -uroot -ptemp <<_EOF_
 UPDATE mysql.user SET authentication_string = PASSWORD('$db_root_password') WHERE User='root';
 UPDATE mysql.user SET plugin = 'mysql_native_password' WHERE User = 'root';
 DELETE FROM mysql.user WHERE User='';
@@ -41,21 +46,20 @@ cp -r wordpress/* /var/www/html
 #apache restart
 systemctl restart apache2
 
-#set kepemilikan dan permissions  
+#set ownership and permissions
 chown -R www-data:www-data /var/www/
 
 #mysql config for wordpress
-mysql -u root -p $db_root_password <<QUERY_INPUT
+mysql -uroot -p$db_root_password <<_EOF_
 CREATE DATABASE $wordpress_db_name;
-CREATE USER "$wordrpress_db_username"@"db_host" IDENTIFIED BY '$db_root_password';
-GRANT ALL PRIVILEGES ON $wordpress_db_name.* TO '$wordpress_db_username'@'db_host' IDENTIFIED BY '$db_root_password';
+CREATE USER '$db_root_username'@'$db_host' IDENTIFIED BY '$db_root_password';
+GRANT ALL PRIVILEGES ON $wordpress_db_name.* TO $db_root_username@$db_host IDENTIFIED BY '$db_root_password';
 FLUSH PRIVILEGES;
-EXIT;
-QUERY_INPUT
-   
+_EOF_
+
 #cleaning
-cd $pwd  
-rm -rf latest.tar.gz wordpress  
-   
-echo "Installation is Complete"
-echo
+cd $pwd
+rm -rf latest.tar.gz wordpress
+echo ""
+echo "========== Go to Your IP Address to Complete the Installation =========="
+echo ""
